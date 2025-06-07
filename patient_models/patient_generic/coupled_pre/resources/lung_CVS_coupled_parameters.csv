@@ -47,7 +47,7 @@ C_T_trunk_C_T,m6_per_J,4e-9,to_be_identified
 C_b_lc,dimensionless,10570,Magosso2001AndUrsino2000
 C_b_lung,J_per_m6,1.3367e-6,YasuhiroFukui1972
 C_inlet_connector,m6_per_J,1e-9,small_chosen
-C_l_lung,J_per_m6,1.2959e-8,YasuhiroFukui1972
+C_l_lung,m6_per_J,1.2959e-8,YasuhiroFukui1972
 C_par,m6_per_J,0.0309077e-8,to_be_identified
 C_pcap,m6_per_J,1.0e-12,small_chosen
 C_pl_lung,J_per_m6,2.5e-6,user_defined_to_be_identified
