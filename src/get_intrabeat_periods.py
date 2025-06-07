@@ -18,14 +18,14 @@ import warnings
 warnings.filterwarnings( "ignore", module = "matplotlib\..*" )
 
 
-def generate_intrabeat_periods_json(patient_num, project_dir):
+def generate_intrabeat_periods_json(patient_num, data_dir):
 
     do_plot = True
 
     ec = BBdata()
     st = signal_tools()
 
-    data_dir_path = os.path.join(project_dir, 'data/pulmonary/Alfred_ECG_Pre_Post_P1_13')
+    data_dir_path = os.path.join(data_dir, 'pulmonary/Alfred_ECG_Pre_Post_P1_13')
     plot_dir = os.path.join(data_dir_path, 'plots')
     if not os.path.exists(plot_dir):
         os.mkdir(plot_dir)
@@ -67,8 +67,10 @@ def generate_intrabeat_periods_json(patient_num, project_dir):
     idxs_to_remove_ecg = [II for II in range(num_segs) if (quality[II] < quality_threshold)]
     print('due to quality, removing indices: ', idxs_to_remove_ecg)
 
-    time_segs = np.delete(time_segs, idxs_to_remove_ecg)
-    ecg_segs = np.delete(ecg_segs, idxs_to_remove_ecg, axis=0)
+    for idx in idxs_to_remove_ecg:
+        del time_segs[idx]
+        del ecg_segs[idx]
+
     heart_period_dict['T'] = np.delete(heart_period_dict['T'], idxs_to_remove_ecg).tolist()
     heart_period_dict['T_vc'] = np.delete(heart_period_dict['T_vc'], idxs_to_remove_ecg).tolist()
     heart_period_dict['T_vr'] = np.delete(heart_period_dict['T_vr'], idxs_to_remove_ecg).tolist()
@@ -144,12 +146,12 @@ if __name__ == "__main__":
     
     if len(sys.argv) == 3:
         patient_num = sys.argv[1]
-        project_dir = sys.argv[2]
+        data_dir= sys.argv[2]
         
     else:
-        print("usage:  python get_intrabeat_periods.py patient_num project_dir") 
+        print("usage:  python get_intrabeat_periods.py patient_num data_dir") 
         exit()
 
-    generate_intrabeat_periods_json(patient_num, project_dir)
+    generate_intrabeat_periods_json(patient_num, data_dir)
 
     

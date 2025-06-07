@@ -6,12 +6,12 @@ from matplotlib import pyplot as plt
 import os
 from get_valve_data import write_to_json_file
 
-def create_gt_obs_data_Alfred(patient_num, project_dir, use_CO_from_SV):
+def create_gt_obs_data_Alfred(patient_num, data_dir, use_CO_from_SV):
 
     # TODO the file paths should be inputs to this function
-    data_dir_path = os.path.join(project_dir, 'data/pulmonary')
-    data_file_path = os.path.join(data_dir_path, 'Alfred_Echo_Pre_Post_vols_P1_13.csv')
-    save_dir_path = os.path.join(project_dir, 'data/pulmonary/ground_truth_for_CA')
+    data_file_path = os.path.join(data_dir, 'pulmonary/Alfred_Echo_Pre_Post_vols_P1_13.csv')
+    all_data_file_path = os.path.join(data_dir, f'pulmonary/ALL_DATA.xlsx')
+    save_dir_path = os.path.join(data_dir, 'pulmonary/ground_truth_for_CA')
     if not os.path.exists(save_dir_path):
         os.mkdir(save_dir_path)
     
@@ -39,29 +39,13 @@ def create_gt_obs_data_Alfred(patient_num, project_dir, use_CO_from_SV):
 
     # Extract the 'PCWP Mean' row
     data_dict[patient_num]["P_ao Sys"] = pre_surgery_data.loc['aortic SP'][patient_num]
-    data_dict[patient_num]["P_ao Dia"] = pre_surgery_data.loc['aortic Dia'][patient_num]
+    data_dict[patient_num]["P_ao Dia"] = pre_surgery_data.loc['aortic DP'][patient_num]
     data_dict[patient_num]["P_pul Sys"] = pre_surgery_data.loc['PASP'][patient_num]
     data_dict[patient_num]["P_pul Dia"] = pre_surgery_data.loc['PADP'][patient_num]
     data_dict[patient_num]["P_rv Sys"] = pre_surgery_data.loc['RVSP'][patient_num]
     data_dict[patient_num]["P_rv Dia"] = pre_surgery_data.loc['RVDP'][patient_num]
-    data_dict[patient_num]["P_pcwp_mean"] = pre_surgery_data.loc['PCWP Mean'][patient_num]
+    data_dict[patient_num]["P_pcwp mean"] = pre_surgery_data.loc['PCWP Mean'][patient_num]
     data_dict[patient_num]["CO"] = pre_surgery_data.loc['CO'][patient_num]
-
-    # previously used for patient 4
-    # data_dict[patient_num]["P_ao Sys"] = 144
-    # data_dict[patient_num]["P_ao Dia"] = 101
-    # data_dict[patient_num]["P_pul Sys"] = 56
-    # # data_dict[patient_num]["P_pul Mean"] = 56
-    # data_dict[patient_num]["P_pul Dia"] = 20
-    # data_dict[patient_num]["P_rv Sys"] = 56
-    # # data_dict[patient_num]["P_pul Mean"] = 56
-    # data_dict[patient_num]["P_rv Dia"] = 7 
-    # data_dict[patient_num]["P_pcwp mean"] = 12
-    # data_dict[patient_num]["CO"] = 7.08 # L/min
-    
-    print("######################### IMPORTANT #####################")
-    print("CHANGE TO READING FROM ALL_DATA.xlsx. CURRENTLY HARDCODED")
-    print("######################### IMPORTANT #####################")
 
     ml_to_m3 = 1e-6
     mmHg_to_Pa = 133.332
@@ -200,7 +184,6 @@ def create_gt_obs_data_Alfred(patient_num, project_dir, use_CO_from_SV):
         print("using CO from catheter for ROM")
 
     # add resistances here
-    # constants_of_interest_pre = #TODO
     
     save_name = 'ground_truth_Alfred'
     save_name_pre = save_name + '_pre'
@@ -224,6 +207,7 @@ def create_gt_obs_data_Alfred(patient_num, project_dir, use_CO_from_SV):
 
     # ths only works because my json data is a list
     combined_data_pre = data_1 + data_2 + data_3_pre
+    print(combined_data_pre)
     # post case still has periods from pre, because we assume they are unknown for post
     combined_data_post = data_1 + data_2 + data_3_post
 
@@ -238,10 +222,10 @@ if __name__ == '__main__':
         
     if len(sys.argv) == 3:
         patient_num=sys.argv[1]
-        project_dir=sys.argv[2]
+        data_dir =sys.argv[2]
         
     else:
-        print("usage:  python create_gt_Alfred.py patient_num project_dir") 
+        print("usage:  python create_gt_Alfred.py patient_num data_dir") 
         exit()
 
-    create_gt_obs_data_Alfred(patient_num, project_dir)
+    create_gt_obs_data_Alfred(patient_num, data_dir)
