@@ -1,0 +1,31 @@
+name,BC_type,vessel_type,inp_vessels,out_vessels,
+inlet,            nn_fourier_8,   inlet_flow,             ,                         inlet_connector
+inlet_connector,  vv,             arterial_simple,        inlet,                    MPA_A 
+MPA_A,pv_nonlinear,split_junction,inlet_connector  ,LPA_A RPA_A
+LPA_A,pv_nonlinear,split_junction,MPA_A        ,LUL_A LBS_A
+LUL_A,pp_nonlinear,arterial,LPA_A              ,L_connector_A
+LBS_A,pv_nonlinear,split_junction,LPA_A              ,LM_A LLL_A
+LM_A,pp_nonlinear,arterial,LBS_A              ,L_connector_A
+L_connector_A,vv,merge_junction_simple,LUL_A LM_A ,LUL
+LLL_A,pv_nonlinear,arterial,LBS_A              ,LLL
+RPA_A,pv_nonlinear,split_junction,MPA_A        ,RUL_A RBS_A
+RUL_A,pv_nonlinear,arterial,RPA_A              ,RUL
+RBS_A,pv_nonlinear,split_junction,RPA_A          ,RML_A RLL_A
+RML_A,pv_nonlinear,arterial,RBS_A        ,RML
+RLL_A,pv_nonlinear,arterial,RBS_A        ,RLL
+LUL,pp_RICRI,terminal,L_connector_A         ,L_connector_V
+LLL,pp_RICRI,terminal,LLL_A                     ,LLL_V
+RUL,pp_RICRI,terminal,RUL_A                     ,RUL_V
+RML,pp_RICRI,terminal,RML_A                     ,RML_V
+RLL,pp_RICRI,terminal,RLL_A                     ,RLL_V
+RLL_V,vp_nonlinear,venous,RLL                       ,RBS_V
+RUL_V,vp_nonlinear,venous,RUL                       ,RPV_V
+RML_V,vp_nonlinear,venous,RML                       ,RBS_V
+RBS_V,vp_nonlinear,merge_junction,RLL_V RML_V   ,RPV_V
+RPV_V,vp_nonlinear,merge_junction,RBS_V RUL_V     ,
+L_connector_V,vv,split_junction_simple, LUL, LUL_V LM_V
+LLL_V,vp_nonlinear,venous,LLL ,LBS_V
+LUL_V,pp_nonlinear,venous,L_connector_V             ,LPV_V
+LM_V,pp_nonlinear,venous,L_connector_V              ,LBS_V
+LBS_V,vp_nonlinear,merge_junction,LLL_V LM_V         ,LPV_V
+LPV_V,vp_nonlinear,merge_junction,LBS_V LUL_V         ,

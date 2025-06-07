@@ -1,0 +1,28 @@
+vessel_name,                  param_name,       param_type,  min,        max,     name_for_plotting
+LUL,                        frac_R_T_1_of_R_T,const,       0.05,        0.98,     \frac{R_{T_1}}{R_{T}} 
+LLL,                        frac_R_T_1_of_R_T,const,       0.05,        0.98,     \frac{R_{T_1}}{R_{T}}
+RUL,                        frac_R_T_1_of_R_T,const,       0.05,        0.98,     \frac{R_{T_1}}{R_{T}}
+RML,                        frac_R_T_1_of_R_T,const,       0.05,        0.98,     \frac{R_{T_1}}{R_{T}}
+RLL,                        frac_R_T_1_of_R_T,const,       0.05,        0.98,     \frac{R_{T_1}}{R_{T}}
+LUL,                        R_T,            const,         1e8,        1.4e8,      R_{LUL}
+LUL,                        C_T,            const,         1e-11,      1e-9,     C_{LUL}
+LUL,                        I_T_1,          const,         4e5,        3e7,      I_1_{LUL}
+LUL,                        I_T_2,          const,         4e6,        4e8,      I_2_{LUL}
+LLL,                        R_T,            const,         6e7,        1e8,      R_{LLL}
+LLL,                        C_T,            const,         1e-11,      1e-9,     C_{LLL}
+LLL,                        I_T_1,          const,         4e5,        3e7,      I_1_{LLL}
+LLL,                        I_T_2,          const,         4e6,        4e8,      I_2_{LLL}
+RUL,                        R_T,            const,         1e8,        1.6e8,      R_{RUL}
+RUL,                        C_T,            const,         1e-12,      1e-9,     C_{RUL}
+RUL,                        I_T_1,          const,         4e5,        3e7,      I_1_{RUL}
+RUL,                        I_T_2,          const,         2e6,        4e8,      I_2_{RUL}
+RML,                        R_T,            const,         2e8,        3e8,      R_{RML}
+RML,                        C_T,            const,         1e-11,      1e-9,     C_{RML}
+RML,                        I_T_1,          const,         4e5,        3e7,      I_1_{RML}
+RML,                        I_T_2,          const,         4e6,        4e8,      I_2_{RML}
+RLL,                        R_T,            const,         1e8,        1.4e8,      R_{RLL}
+RLL,                        C_T,            const,         1e-11,      1e-9,     C_{RLL}
+RLL,                        I_T_1,          const,         4e5,        3e7,      I_1_{RLL}
+RLL,                        I_T_2,          const,         4e6,        4e8,      I_2_{RLL}
+LM_A,                       r,              const,         5e-4,       3e-3,     r_{LM}
+
