@@ -28,7 +28,7 @@ def change_patient_num(patient_num, case_type, data_dir, CA_dir, period=1):
     # else:
     #     pre_or_post = 'post'
     if case_type in ['pre', 'post']:
-        inp_data_dict['pre_time'] = 20*period
+        inp_data_dict['pre_time'] = 40*period
         inp_data_dict['sim_time'] = 3*period
     else:
         inp_data_dict['pre_time'] = 40*period

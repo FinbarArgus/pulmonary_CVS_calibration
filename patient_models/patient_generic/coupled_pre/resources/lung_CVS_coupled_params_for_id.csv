@@ -1,10 +1,9 @@
 vessel_name,                  param_name,       param_type, min,        max,    name_for_plotting
-heart,                        E_lv_A,           const,      1e8,        1.2e9,    E_{lvA}
-heart,                        E_lv_B,           const,      1e7,        1e8,    E_{lvB}
-heart,                        E_rv_A,           const,      4e5,        2e7,    E_{rvA}
-heart,                        E_rv_B,           const,      1e6,        3e7,    E_{rvB}
-heart,                        E_la_A,           const,      1e6,        1e7,    E_{laA}
-heart,                        E_la_B,           const,      1e5,        1e7,    E_{laA}
-venous_lb venous_ub venous_ivc venous_svc, C,   const,      1e-8,       1e-7,   C_{VE}
+global,                        E_lv_A,           const,      1.5e8,      3.5e8,  E_{lvA}
+global,                        E_lv_B,           const,      1e7,        1e8,    E_{lvB}
+global,                        E_rv_A,           const,      1e7,        2e7,    E_{rvA}
+global,                        E_la_A,           const,      1e6,        1.5e7,    E_{laA}
+global,                        E_la_B,           const,      1e6,        1.5e7,    E_{laB}
+venous_lb venous_ub venous_ivc venous_svc, C,   const,      1e-6,       4e-6,   C_{VE}
 ascending_aorta_A ascending_aorta_B ascending_aorta_C ascending_aorta_D aortic_arch_C2 aortic_arch_C46 aortic_arch_C64 brachiocephalic_trunk_C4 subclavian_L66 subclavian_L78 brachial_L82 common_carotid_L48_A common_carotid_L48_B common_carotid_L48_C common_carotid_L48_D common_carotid_R6_A common_carotid_R6_B common_carotid_R6_C subclavian_R28 subclavian_R30 brachial_R34, E,     const, 1e5, 1e6,  E_{proxArt}   
 

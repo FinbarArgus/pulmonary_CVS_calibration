@@ -11,8 +11,11 @@ def convert_lungsim_output_to_obs_data_json(patient_num, pre_or_post, data_dir, 
     constants_save_file_path = os.path.join(data_dir, f'pulmonary/ground_truth_for_CA/ROM_gt/vessel_geom_constants_{pre_or_post}_patient_{patient_num}.json')
     all_data_file_path = os.path.join(data_dir, f'pulmonary/ALL_DATA.xlsx')
 
+    data_reduced_file_path = os.path.join(data_dir, f'pulmonary/lobe_impedances/{patient_num}/{pre_or_post}/lobe_imped_CO_reduced.json')
     with open(data_file_path, 'r') as file:
         data = json.load(file)
+    with open(data_reduced_file_path, 'r') as file:
+        data_reduced = json.load(file)
 
     vessel_array = pd.read_csv(vessel_array_path, index_col=0)
     # dyne_s_per_cm5_to_J_s_per_m6 
@@ -35,8 +38,9 @@ def convert_lungsim_output_to_obs_data_json(patient_num, pre_or_post, data_dir, 
     pre_surgery_data = df.iloc[pre_surgery_index:post_surgery_index]
 
     # Extract the 'PCWP Mean' row
-    P_pcwp_mean = pre_surgery_data.loc['PCWP Mean'][patient_num]*mmHg_to_Pa
-    MPA_mean_pressure = pre_surgery_data.loc['PA Mean'][patient_num]*mmHg_to_Pa 
+    P_pcwp_mean = pre_surgery_data.loc['PCWP Mean'][f"AH{patient_num:03d}"]*mmHg_to_Pa
+    # MPA_mean_pressure = pre_surgery_data.loc['PA Mean'][patient_num]*mmHg_to_Pa 
+    MPA_mean_pressure = data["Pressure amplitude"]["MPA_A_1"][0] 
 
     mu = 0.004
 
@@ -44,14 +48,21 @@ def convert_lungsim_output_to_obs_data_json(patient_num, pre_or_post, data_dir, 
     entry_list = []
     constant_list = []
     terminal_names = []
-    main_arteries = ["MPA_A"]
+    main_arteries = ["MPA_A_1"]
+    vessel_cellml_name = ["par"]
+    count = -1
     for II in range(len(data["vessel_names"])):
 
         entry = {}
-        entry["variable"] = data["vessel_names"][II]
+        vessel_name = data["vessel_names"][II]
 
-        if entry["variable"] not in main_arteries:
+        if vessel_name not in main_arteries:
             continue
+        count +=1
+        
+        period = 1.0/data["frequency"][1]
+        
+        entry["variable"] = vessel_cellml_name[count]
         
         resistance_entry = {}
         resistance_entry["variable_name"] = f'R_{entry["variable"]}'
@@ -63,10 +74,11 @@ def convert_lungsim_output_to_obs_data_json(patient_num, pre_or_post, data_dir, 
 
         entry["data_type"] = "frequency"
         entry["operation"] = "division"
-        input_vessel = vessel_array["inp_vessels"][data["vessel_names"][II]].strip()
+        print(vessel_array)
+        input_vessel = vessel_array["inp_vessels"][entry["variable"]].strip()
         print(input_vessel)
-        BC_type = vessel_array["BC_type"][data["vessel_names"][II]].strip()
-        entry["operands"] = [f'{data["vessel_names"][II]}/u',
+        BC_type = vessel_array["BC_type"][entry["variable"]].strip()
+        entry["operands"] = [f'{entry["variable"]}/u',
                              f'{input_vessel}/v']
 
         updated_imp = [val*conversion for idx, val in enumerate(data["impedance"][data["vessel_names"][II]]) \
@@ -124,40 +136,73 @@ def convert_lungsim_output_to_obs_data_json(patient_num, pre_or_post, data_dir, 
         # this is needed becuase in CA we just do the freq domain conversion on Pressure/flow
         entry["value"][0] = entry["value"][0] + P_pcwp_mean/mean_flow
 
+        entry["experiment_idx"] = 0
+        entry["subexperiment_idx"] = 0
         entry_list.append(entry)
 
         # create entry for fitting the mean flow
         flow_entry = {}
-        flow_entry["variable"] = data["vessel_names"][II] + '/v'
+        flow_entry["variable"] = entry["variable"] + '/v'
         flow_entry["data_type"] = "constant"
         flow_entry["unit"] = "m3/s" # data["impedance"]["unit"]
         flow_entry["obs_type"] = "mean"
         flow_entry["value"] = mean_flow
         flow_entry["std"] = 0.1*mean_flow
         flow_entry["weight"] = 0.1
+        flow_entry["experiment_idx"] = 0
+        flow_entry["subexperiment_idx"] = 0
         entry_list.append(flow_entry)
 
         # if post get MPA input resistance to calc mean pressure and overwrite 
         # measured mean pressure
         if pre_or_post == 'post':
-            if entry["variable"] == "MPA_A":
+            if entry["variable"] == "par":
                 MPA_resistance = entry["value"][0]
                 MPA_mean_pressure = MPA_resistance*mean_flow # TODO should this be 
                                                              # The MPA mean pressure 
                                                              # from ALL_DATA
 
+
     # add entries for MPA pressure
     # I think this makes sure the model converges quickly. Not super sure
     entry = {}
-    entry["variable"] = "MPA_A/u"
+    entry["variable"] = "par/u"
     entry["data_type"] = "constant"
     entry["unit"] = "J/m3" # data["impedance"]["unit"]
     entry["obs_type"] = "mean"
     entry["value"] = MPA_mean_pressure
     entry["std"] = 0.1*MPA_mean_pressure
-    entry["weight"] = 3
+    entry["weight"] = 6
+    entry["experiment_idx"] = 0
+    entry["subexperiment_idx"] = 0
+    entry_list.append(entry)
+    
+    # also add an entry for the perturbed boundary condition pressure
+    entry = {}
+    entry["variable"] = "par/u"
+    entry["data_type"] = "constant"
+    entry["unit"] = "J/m3" # data["impedance"]["unit"]
+    entry["obs_type"] = "mean"
+    MPA_mean_pressure_CO_reduced = data_reduced["Pressure amplitude"]["MPA_A_1"][0] 
+    entry["value"] = MPA_mean_pressure_CO_reduced
+    entry["std"] = 0.1*MPA_mean_pressure_CO_reduced
+    entry["weight"] = 4
+    entry["experiment_idx"] = 0
+    entry["subexperiment_idx"] = 2
     entry_list.append(entry)
 
+    # also create protocol info item
+    print(f"Period is {period} s")
+    protocol_info = {}
+    protocol_info["pre_times"] = [40*period]
+    protocol_info["sim_times"] = [[3*period, 10*period, 3*period]]
+    mean_flow = data['mean flow']["MPA_A_1"][0]*flow_conversion
+    mean_flow_reduced = data_reduced['mean flow']["MPA_A_1"][0]*flow_conversion
+    # todo get this from lobe_imped_CO_reduced json file
+    protocol_info["params_to_change"] = {"inlet/A_0": [[mean_flow, mean_flow_reduced, mean_flow_reduced]],
+                                         "pvn/u_out": [[P_pcwp_mean, 1100, 1100]]} # TODO find out what was actually set here for reduced
+
+    full_dict["protocol_info"] = protocol_info
     full_dict["data_item"] = entry_list 
 
     with open(save_file_path, 'w') as wf: 

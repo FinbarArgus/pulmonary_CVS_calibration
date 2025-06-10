@@ -107,8 +107,7 @@ def write_to_json_file(data_dict, variables_of_interest, constants_of_interest, 
                        extra_df=None, sample_rate=100, save_name='lv_estimation'):
     """
     variables_of_interest = [(data_variable_name, model_variable_name,
-                               variable_type {min, max, mean, series, or [series, min]},
-                               state_or_alg, unit, conversion, weighting_for_importance)]
+                               operation, unit, conversion, weighting_for_importance)]
 
     constants_of_interest = [('data_variable_name', 'model_variable_name')
                             'unit', convergence, 'description_of_measurement')]

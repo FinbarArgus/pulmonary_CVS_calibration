@@ -1,4 +1,4 @@
 vessel_name,    param_name,  param_type,  min,  max, name_for_plotting
-MPA_A,                        C,            const,         1e-9,      1e-8,     C_{MPA_A}
-MPA_A,                        I,          const,         4e5,        3e7,      I_{MPA_A}
+par,            K_tube,         const,         1e3,      1e5,     K_{MPA}
+par,            u_0,            const,         2e3,      4e3,     u0_{MPA}
 

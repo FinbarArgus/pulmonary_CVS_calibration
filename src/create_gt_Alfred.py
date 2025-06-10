@@ -3,8 +3,120 @@ import numpy as np
 import time
 import json
 from matplotlib import pyplot as plt
-import os
-from get_valve_data import write_to_json_file
+import os, sys
+circulatory_autogen_dir = os.path.join(os.path.dirname(__file__), '../../circulatory_autogen') 
+user_inputs_dir = os.path.join(circulatory_autogen_dir, 'user_run_files')
+sys.path.append(os.path.join(circulatory_autogen_dir, 'src/scripts'))
+sys.path.append(os.path.join(circulatory_autogen_dir, 'src'))
+sys.path.append(os.path.join(circulatory_autogen_dir, 'funcs_user'))
+from utilities.obs_data_helpers import ObsDataCreator
+from parsers.PrimitiveParsers import scriptFunctionParser
+# from get_valve_data import write_to_json_file
+
+def write_observables_to_json_file(patient_data_dict, participant_id, variables_of_interest, 
+        save_path, dt=0.01, save_name='default', sample_rate=100):
+    
+    """
+    variables_of_interest = [(data_variable_name, model_variable_name,
+                               operation, unit, conversion, weighting_for_importance,
+                               CV (coefficient of variation)), name_for_plotting]
+
+    """
+        
+    obs_dt = 1/sample_rate
+    d_dict = patient_data_dict
+    obs_data_creator = ObsDataCreator()
+
+    sfp = scriptFunctionParser()
+    operation_funcs_dict = sfp.get_operation_funcs_dict()
+
+    # obs_data_creator.add_protocol_info(pre_times, sim_times, params_to_change, experiment_labels)
+
+    for tup in variables_of_interest:
+        if len(tup) != 8:
+            raise ValueError("Each tuple in variables_of_interest must have 6 elements.")
+        data_variable_name = tup[0]
+        model_variable_name = tup[1]
+        operation = tup[2]
+        operands = [model_variable_name]
+        unit = tup[3]
+        conversion = tup[4]
+        weight = tup[5]
+        CV= tup[6] 
+        name_for_plotting = tup[7] 
+        if data_variable_name not in d_dict.keys():
+            raise KeyError(f"{data_variable_name} not found in patient data dictionary.")
+
+        if isinstance(operation, str):
+            operation_list = [operation]
+        elif isinstance(operation, list):
+            operation_list = operation
+        else:
+            print('3rd variable of interest tuple entry should be string or list of strings')
+            exit()
+
+        for op in operation_list:
+            value = operation_funcs_dict[op](d_dict[data_variable_name])
+            if isinstance(value, (float, np.float32, np.float64)):
+                series_or_const = 'const'
+            elif isinstance(value, (np.ndarray, list)):
+                series_or_const = 'series'
+        
+
+            entry = {'variable': model_variable_name,
+                    'unit': unit,
+                    'value': value*conversion,
+                    'weight': weight,
+                    'std': 0.01*CV*value*conversion,  # assuming 1% CV
+                    'data_type': series_or_const,
+                    'operation': op,
+                    'operands': operands,
+                    'name_for_plotting' : name_for_plotting
+                    }
+            obs_data_creator.add_data_item(entry)
+        
+    obs_data_creator.dump_to_path(os.path.join(save_path, f'{save_name}_observables_{participant_id}.json'))
+
+
+
+def write_constants_to_json_file(data_dict, participant_id, constants_of_interest, save_path, 
+        save_name='default'):
+    """
+    constants_of_interest = [('data_variable_name', 'model_variable_name')
+                            'unit', convergence, 'description_of_measurement')]
+    """
+
+    constant_list = []
+    for tup in constants_of_interest:
+        if len(tup) != 5:
+            raise ValueError("Each tuple in constants_of_interest must have 5 elements.")
+
+        data_variable_name = tup[0]
+        model_variable_name = tup[1]
+        unit = tup[2]
+        conversion = tup[3]
+        data_reference = tup[4]
+        if data_variable_name not in data_dict.keys():
+            raise KeyError(f"{data_variable_name} not found in patient data dictionary.")
+
+        value = data_dict[data_variable_name]
+
+        constant_entry = {'variable_name': model_variable_name,
+                    'units': unit,
+                    'value': value*conversion,
+                    'data_reference': data_reference}
+        constant_list.append(constant_entry)
+
+        
+    if len(constant_list) > 0:
+        constants_json_df = pd.DataFrame(constant_list)
+        constants_result = constants_json_df.to_json(orient='records')
+        constants_parsed = json.loads(constants_result)
+        with open(os.path.join(save_path, f'{save_name}_constants_{participant_id}.json'), 'w') as wf:
+            json.dump(constants_parsed, wf, indent=2)
+    
+    return
+    
 
 def create_gt_obs_data_Alfred(patient_num, data_dir, use_CO_from_SV):
 
@@ -38,14 +150,15 @@ def create_gt_obs_data_Alfred(patient_num, data_dir, use_CO_from_SV):
     pre_surgery_data = df.iloc[pre_surgery_index:post_surgery_index]
 
     # Extract the 'PCWP Mean' row
-    data_dict[patient_num]["P_ao Sys"] = pre_surgery_data.loc['aortic SP'][patient_num]
-    data_dict[patient_num]["P_ao Dia"] = pre_surgery_data.loc['aortic DP'][patient_num]
-    data_dict[patient_num]["P_pul Sys"] = pre_surgery_data.loc['PASP'][patient_num]
-    data_dict[patient_num]["P_pul Dia"] = pre_surgery_data.loc['PADP'][patient_num]
-    data_dict[patient_num]["P_rv Sys"] = pre_surgery_data.loc['RVSP'][patient_num]
-    data_dict[patient_num]["P_rv Dia"] = pre_surgery_data.loc['RVDP'][patient_num]
-    data_dict[patient_num]["P_pcwp mean"] = pre_surgery_data.loc['PCWP Mean'][patient_num]
-    data_dict[patient_num]["CO"] = pre_surgery_data.loc['CO'][patient_num]
+    patient_ID = f"AH{patient_num:03d}"
+    data_dict[patient_num]["P_ao Sys"] = pre_surgery_data.loc['aortic SP'][patient_ID]
+    data_dict[patient_num]["P_ao Dia"] = pre_surgery_data.loc['aortic DP'][patient_ID]
+    data_dict[patient_num]["P_pul Sys"] = pre_surgery_data.loc['PASP'][patient_ID]
+    data_dict[patient_num]["P_pul Dia"] = pre_surgery_data.loc['PADP'][patient_ID]
+    data_dict[patient_num]["P_rv Sys"] = pre_surgery_data.loc['RVSP'][patient_ID]
+    data_dict[patient_num]["P_rv Dia"] = pre_surgery_data.loc['RVDP'][patient_ID]
+    data_dict[patient_num]["P_pcwp mean"] = pre_surgery_data.loc['PCWP Mean'][patient_ID]
+    data_dict[patient_num]["CO"] = pre_surgery_data.loc['CO'][patient_ID]
 
     ml_to_m3 = 1e-6
     mmHg_to_Pa = 133.332
@@ -55,46 +168,46 @@ def create_gt_obs_data_Alfred(patient_num, data_dir, use_CO_from_SV):
     # TODO get the aortic pressure, rv pressure, and PA pressure from dataset here
 
     variables_of_interest_pre = [('Pre LV Dia Vol- ml', 'heart/q_lv', 'max', 
-                                    'm3', ml_to_m3, 1.0, 10.0, 'q_{lv}'),
+                                    'm3', ml_to_m3, 1.0, 10.0, 'q_{lvMax}'),
                                 ('Pre LV Sys Vol- ml', 'heart/q_lv', 'min', 
-                                    'm3', ml_to_m3, 1.0, 10.0, 'q_{lv}'),
+                                    'm3', ml_to_m3, 1.0, 10.0, 'q_{lvMin}'),
                                 ('P_ao Sys', 'ascending_aorta_B/u', 'max', 
-                                    'J_per_m3', mmHg_to_Pa, 3.0, 10.0, 'u_{ao}'),
+                                    'J_per_m3', mmHg_to_Pa, 3.0, 10.0, 'u_{aoMax}'),
                                 ('P_ao Dia', 'ascending_aorta_B/u', 'min', 
-                                    'J_per_m3', mmHg_to_Pa, 3.0, 10.0, 'u_{ao}'),
-                                ('P_pul Sys', 'MPA_A/u', 'max', 
-                                    'J_per_m3', mmHg_to_Pa, 1.0, 10.0, 'u_{pul}'),
-                                ('P_pul Dia', 'MPA_A/u', 'min', 
-                                    'J_per_m3', mmHg_to_Pa, 1.0, 10.0, 'u_{pul}'),
+                                    'J_per_m3', mmHg_to_Pa, 3.0, 10.0, 'u_{aoMin}'),
+                                ('P_pul Sys', 'par/u', 'max', 
+                                    'J_per_m3', mmHg_to_Pa, 1.0, 10.0, 'u_{pulMax}'),
+                                ('P_pul Dia', 'par/u', 'min', 
+                                    'J_per_m3', mmHg_to_Pa, 1.0, 10.0, 'u_{pulMin}'),
                                 ('P_rv Sys', 'heart/u_rv', 'max', 
-                                    'J_per_m3', mmHg_to_Pa, 1.0, 10.0, 'u_{rv}'),
+                                    'J_per_m3', mmHg_to_Pa, 1.0, 10.0, 'u_{rvMax}'),
                                 ('P_rv Dia', 'heart/u_rv', 'min', 
-                                    'J_per_m3', mmHg_to_Pa, 1.0, 10.0, 'u_{rv}'),
+                                    'J_per_m3', mmHg_to_Pa, 1.0, 10.0, 'u_{rvMin}'),
                                 ('P_pcwp mean', 'heart/u_la', 'mean', 
-                                    'J_per_m3', mmHg_to_Pa, 1.0, 10.0, 'u_{la}')]
+                                    'J_per_m3', mmHg_to_Pa, 1.0, 10.0, 'u_{laMean}')]
 
     variables_of_interest_post = [('Post LV Dia Vol- ml', 'heart/q_lv', 'max', 
-                                    'm3', ml_to_m3, 1.0, 10.0, 'q_{lv}'),
+                                    'm3', ml_to_m3, 1.0, 10.0, 'q_{lvMax}'),
                                 ('Post LV Sys Vol- ml', 'heart/q_lv', 'min', 
-                                    'm3', ml_to_m3, 1.0, 10.0, 'q_{lv}'),
+                                    'm3', ml_to_m3, 1.0, 10.0, 'q_{lvMin}'),
                                 ('P_ao Sys', 'brachial_L82/u', 'max', 
-                                    'J_per_m3', mmHg_to_Pa, 3.0, 10.0, 'u_{ao}'),
+                                    'J_per_m3', mmHg_to_Pa, 3.0, 10.0, 'u_{aoMax}'),
                                 ('P_ao Dia', 'brachial_L82/u', 'min', 
-                                    'J_per_m3', mmHg_to_Pa, 3.0, 10.0, 'u_{ao}'),
-                                ('P_pul Sys', 'MPA_A/u', 'max', 
-                                    'J_per_m3', mmHg_to_Pa, 1.0, 10.0, 'u_{pul}'),
-                                ('P_pul Dia', 'MPA_A/u', 'min', 
-                                    'J_per_m3', mmHg_to_Pa, 1.0, 10.0, 'u_{pul}'),
+                                    'J_per_m3', mmHg_to_Pa, 3.0, 10.0, 'u_{aoMin}'),
+                                ('P_pul Sys', 'par/u', 'max', 
+                                    'J_per_m3', mmHg_to_Pa, 1.0, 10.0, 'u_{pulMax}'),
+                                ('P_pul Dia', 'par/u', 'min', 
+                                    'J_per_m3', mmHg_to_Pa, 1.0, 10.0, 'u_{pulMin}'),
                                 ('P_rv Sys', 'heart/u_rv', 'max', 
-                                    'J_per_m3', mmHg_to_Pa, 1.0, 10.0, 'u_{rv}'),
+                                    'J_per_m3', mmHg_to_Pa, 1.0, 10.0, 'u_{rvMax}'),
                                 ('P_rv Dia', 'heart/u_rv', 'min', 
-                                    'J_per_m3', mmHg_to_Pa, 1.0, 10.0, 'u_{rv}'),
+                                    'J_per_m3', mmHg_to_Pa, 1.0, 10.0, 'u_{rvMin}'),
                                 ('P_pcwp mean', 'heart/u_la', 'mean', 
-                                    'J_per_m3', mmHg_to_Pa, 1.0, 10.0, 'u_{la}')]
+                                    'J_per_m3', mmHg_to_Pa, 1.0, 10.0, 'u_{laMean}')]
                                     
     # add atrial mean pressure for the ROM
     constants_of_interest_pre = []
-    constants_of_interest_pre.append(('P_pcwp mean', 'u_out_MPA_A',
+    constants_of_interest_pre.append(('P_pcwp mean', 'u_out_pvn',
                             'J_per_m3', mmHg_to_Pa, 'Alfred_database'))
     # constants_of_interest_pre.append(('P_pcwp mean', 'u_out_LPV_V',
     #                         'J_per_m3', mmHg_to_Pa, 'Alfred_database'))
@@ -187,8 +300,12 @@ def create_gt_obs_data_Alfred(patient_num, data_dir, use_CO_from_SV):
     
     save_name = 'ground_truth_Alfred'
     save_name_pre = save_name + '_pre'
-    write_to_json_file(data_dict, variables_of_interest_pre, constants_of_interest_pre,
+    # write_to_json_file(data_dict, variables_of_interest_pre, constants_of_interest_pre,
+    #                 save_dir_path, save_name=save_name_pre, sample_rate=fs)
+    write_observables_to_json_file(data_dict[patient_num], patient_num, variables_of_interest_pre,
                     save_dir_path, save_name=save_name_pre, sample_rate=fs)
+    write_constants_to_json_file(data_dict[patient_num], patient_num, constants_of_interest_pre,
+                    save_dir_path, save_name=save_name_pre)
 
     # combine periods json constants file with the one just generated for the pre case
 

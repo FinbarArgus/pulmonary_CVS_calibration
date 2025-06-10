@@ -1,3 +1,5 @@
 name,BC_type,vessel_type,inp_vessels,out_vessels,
-inlet,            nn_fourier_8,   inlet_flow,             ,                        MPA_A 
-MPA_A,vp,arterial_simple,inlet,
+inlet,            nn_fourier_8,   inlet_flow,             ,        par 
+par,vp_nonlinear,arterial_simple,inlet, pcap
+pcap,vp,arterial_simple,par,pvn
+pvn,vp,venous,pcap,

@@ -35,7 +35,7 @@ if __name__ == "__main__":
         use_CO_from_SV = False # if true calcs cardiac output from stroke volume, 
         # otherwise uses CO from ALL_DATA.xlsx file (TODO make sure this isn't hardcoded)
         convert_lungsim_output_to_obs_data_json(patient_num, "pre", data_dir, use_CO_from_SV)
-        convert_lungsim_output_to_obs_data_json(patient_num, "post", data_dir, use_CO_from_SV)
+        # convert_lungsim_output_to_obs_data_json(patient_num, "post", data_dir, use_CO_from_SV)
 
         generate_intrabeat_periods_json(patient_num, data_dir)
         create_gt_obs_data_Alfred(patient_num, data_dir, use_CO_from_SV)
