@@ -13,9 +13,9 @@ from matplotlib import pyplot as plt
 from haemotools.BB_echo_functions import BBdata
 from haemotools.signal_analysis import signal_tools
 from read_tomtec_worksheets import read_tomtec_worksheets
-from get_valve_data import write_to_json_file
 import warnings
 warnings.filterwarnings( "ignore", module = "matplotlib\..*" )
+from create_gt_Alfred import write_constants_to_json_file
 
 
 def generate_intrabeat_periods_json(patient_num, data_dir):
@@ -134,13 +134,12 @@ def generate_intrabeat_periods_json(patient_num, data_dir):
 
     variables_of_interest = []
     
-    reduced_data_dict = {f'{patient_num}': optimal_dict}
     save_dir= os.path.join(data_dir_path, '../ground_truth_for_CA')
     if not os.path.exists(save_dir):
         os.mkdir(save_dir)
     
-    write_to_json_file(reduced_data_dict, variables_of_interest, constants_of_interest,
-                    save_dir, save_name='alfred_periods', sample_rate=fs)
+    write_constants_to_json_file(optimal_dict, patient_num, constants_of_interest,
+                    save_dir, save_name='alfred_periods')
     
 if __name__ == "__main__":
     

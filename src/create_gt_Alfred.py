@@ -11,7 +11,6 @@ sys.path.append(os.path.join(circulatory_autogen_dir, 'src'))
 sys.path.append(os.path.join(circulatory_autogen_dir, 'funcs_user'))
 from utilities.obs_data_helpers import ObsDataCreator
 from parsers.PrimitiveParsers import scriptFunctionParser
-# from get_valve_data import write_to_json_file
 
 def write_observables_to_json_file(patient_data_dict, participant_id, variables_of_interest, 
         save_path, dt=0.01, save_name='default', sample_rate=100):
@@ -58,7 +57,7 @@ def write_observables_to_json_file(patient_data_dict, participant_id, variables_
         for op in operation_list:
             value = operation_funcs_dict[op](d_dict[data_variable_name])
             if isinstance(value, (float, np.float32, np.float64)):
-                series_or_const = 'const'
+                series_or_const = 'constant'
             elif isinstance(value, (np.ndarray, list)):
                 series_or_const = 'series'
         
@@ -266,6 +265,11 @@ def create_gt_obs_data_Alfred(patient_num, data_dir, use_CO_from_SV):
     M_O2 = -flows*(-C_O2_p + C_O2_a)
     M_CO2 = -M_O2*0.75 # TODO improve this assumption for each tissue type.
 
+    P_nom = MAP*1.1
+    P_nom_name = 'P_nom_common_carotid_L_baro'
+    data_dict[patient_num][P_nom_name] = P_nom
+    constants_of_interest_pre.append((P_nom_name, P_nom_name, 'J_per_m3', 
+                                     no_conv, 'Alfred_set_to_MAP'))
 
     for II in range(len(terminal_vessels)):
         R_T_name = 'R_T_' + terminal_vessels[II] + '_T'

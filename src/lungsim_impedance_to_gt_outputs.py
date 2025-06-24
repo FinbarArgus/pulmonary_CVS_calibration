@@ -11,11 +11,17 @@ def convert_lungsim_output_to_obs_data_json(patient_num, pre_or_post, data_dir, 
     constants_save_file_path = os.path.join(data_dir, f'pulmonary/ground_truth_for_CA/ROM_gt/vessel_geom_constants_{pre_or_post}_patient_{patient_num}.json')
     all_data_file_path = os.path.join(data_dir, f'pulmonary/ALL_DATA.xlsx')
 
-    data_reduced_file_path = os.path.join(data_dir, f'pulmonary/lobe_impedances/{patient_num}/{pre_or_post}/lobe_imped_CO_reduced.json')
+    data_reduced_60_file_path = os.path.join(data_dir, f'pulmonary/lobe_impedances/{patient_num}/{pre_or_post}/lobe_imped_CO_reduced_60.json')
+    data_reduced_80_file_path = os.path.join(data_dir, f'pulmonary/lobe_impedances/{patient_num}/{pre_or_post}/lobe_imped_CO_reduced_80.json')
+    data_increased_120_file_path = os.path.join(data_dir, f'pulmonary/lobe_impedances/{patient_num}/{pre_or_post}/lobe_imped_CO_increased_120.json')
     with open(data_file_path, 'r') as file:
         data = json.load(file)
-    with open(data_reduced_file_path, 'r') as file:
-        data_reduced = json.load(file)
+    with open(data_reduced_60_file_path, 'r') as file:
+        data_reduced_60 = json.load(file)
+    with open(data_reduced_80_file_path, 'r') as file:
+        data_reduced_80 = json.load(file)
+    with open(data_increased_120_file_path, 'r') as file:
+        data_increased_120 = json.load(file)
 
     vessel_array = pd.read_csv(vessel_array_path, index_col=0)
     # dyne_s_per_cm5_to_J_s_per_m6 
@@ -177,30 +183,60 @@ def convert_lungsim_output_to_obs_data_json(patient_num, pre_or_post, data_dir, 
     entry["subexperiment_idx"] = 0
     entry_list.append(entry)
     
-    # also add an entry for the perturbed boundary condition pressure
+    # also add entries for the perturbed boundary condition pressures
+    MPA_mean_pressure_CO_reduced_60 = data_reduced_60["Pressure amplitude"]["MPA_A_1"][0] 
+    MPA_mean_pressure_CO_reduced_80 = data_reduced_80["Pressure amplitude"]["MPA_A_1"][0] 
+    MPA_mean_pressure_CO_increased_120 = data_increased_120["Pressure amplitude"]["MPA_A_1"][0] 
+
     entry = {}
     entry["variable"] = "par/u"
     entry["data_type"] = "constant"
     entry["unit"] = "J/m3" # data["impedance"]["unit"]
     entry["obs_type"] = "mean"
-    MPA_mean_pressure_CO_reduced = data_reduced["Pressure amplitude"]["MPA_A_1"][0] 
-    entry["value"] = MPA_mean_pressure_CO_reduced
-    entry["std"] = 0.1*MPA_mean_pressure_CO_reduced
+    entry["value"] = MPA_mean_pressure_CO_reduced_60
+    entry["std"] = 0.1*MPA_mean_pressure_CO_reduced_60
     entry["weight"] = 4
     entry["experiment_idx"] = 0
     entry["subexperiment_idx"] = 2
     entry_list.append(entry)
 
+    entry = {}
+    entry["variable"] = "par/u"
+    entry["data_type"] = "constant"
+    entry["unit"] = "J/m3" # data["impedance"]["unit"]
+    entry["obs_type"] = "mean"
+    entry["value"] = MPA_mean_pressure_CO_reduced_80
+    entry["std"] = 0.1*MPA_mean_pressure_CO_reduced_80
+    entry["weight"] = 4
+    entry["experiment_idx"] = 0
+    entry["subexperiment_idx"] = 4
+    entry_list.append(entry)
+    
+    entry = {}
+    entry["variable"] = "par/u"
+    entry["data_type"] = "constant"
+    entry["unit"] = "J/m3" # data["impedance"]["unit"]
+    entry["obs_type"] = "mean"
+    entry["value"] = MPA_mean_pressure_CO_increased_120
+    entry["std"] = 0.1*MPA_mean_pressure_CO_increased_120
+    entry["weight"] = 4
+    entry["experiment_idx"] = 0
+    entry["subexperiment_idx"] = 6
+    entry_list.append(entry)
+
     # also create protocol info item
     print(f"Period is {period} s")
     protocol_info = {}
-    protocol_info["pre_times"] = [40*period]
-    protocol_info["sim_times"] = [[3*period, 10*period, 3*period]]
+    protocol_info["pre_times"] = [10*period]
+    protocol_info["sim_times"] = [[3*period, 3*period, 3*period, 3*period, 3*period, 3*period, 3*period]]
     mean_flow = data['mean flow']["MPA_A_1"][0]*flow_conversion
-    mean_flow_reduced = data_reduced['mean flow']["MPA_A_1"][0]*flow_conversion
+    mean_flow_reduced_60 = data_reduced_60['mean flow']["MPA_A_1"][0]*flow_conversion
+    mean_flow_reduced_80 = data_reduced_80['mean flow']["MPA_A_1"][0]*flow_conversion
+    mean_flow_increased_120= data_increased_120['mean flow']["MPA_A_1"][0]*flow_conversion
     # todo get this from lobe_imped_CO_reduced json file
-    protocol_info["params_to_change"] = {"inlet/A_0": [[mean_flow, mean_flow_reduced, mean_flow_reduced]],
-                                         "pvn/u_out": [[P_pcwp_mean, 1100, 1100]]} # TODO find out what was actually set here for reduced
+    protocol_info["params_to_change"] = {"inlet/A_0": [[mean_flow, mean_flow_reduced_60, mean_flow_reduced_60,
+                                                        mean_flow_reduced_80, mean_flow_reduced_80,
+                                                        mean_flow_increased_120, mean_flow_increased_120]]}
 
     full_dict["protocol_info"] = protocol_info
     full_dict["data_item"] = entry_list 
